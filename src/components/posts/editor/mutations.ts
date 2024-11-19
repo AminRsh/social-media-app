@@ -16,8 +16,7 @@ export function useSubmitPostMutation() {
 
             queryClient.setQueriesData<InfiniteData<PostsPage, string | null>>(queryfilter,
                 (oldData) => {
-                    const firstPage = oldData?.pages[0]
-
+                    const firstPage = oldData?.pages[0];
                     if (firstPage) {
                         return {
                             pageParams: oldData.pageParams,
@@ -32,6 +31,14 @@ export function useSubmitPostMutation() {
                     }
                 }
             )
+
+            queryClient.invalidateQueries({
+                queryKey: queryfilter.queryKey,
+                predicate(query) {
+                    return !query.state.data;
+                }
+            })
+            
             toast({
                 description: "Post Created"
             })
