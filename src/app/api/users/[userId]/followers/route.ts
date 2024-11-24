@@ -80,23 +80,27 @@ export async function POST(req: Request,
     }
 };
 
-export async function DELETE(req: Request,
-    { params: { userId } }: { params: { userId: string } }) { 
+export async function DELETE(
+    req: Request,
+    { params: { userId } }: { params: { userId: string } },
+) {
     try {
-        const { user: loggedInUser } = await validateRequest()
+        const { user: loggedInUser } = await validateRequest();
 
         if (!loggedInUser) {
-            return Response.json({ error: "Unauthorized" }, { status: 401 })
+            return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         await prisma.follow.deleteMany({
             where: {
                 followerId: loggedInUser.id,
-                followingId: userId
-            }
-        })
+                followingId: userId,
+            },
+        });
+
+        return new Response();
     } catch (error) {
         console.error(error);
-        return Response.json({ error: "Internal Server Error" }, { status: 500 })
+        return Response.json({ error: "Internal server error" }, { status: 500 });
     }
-};
+}
