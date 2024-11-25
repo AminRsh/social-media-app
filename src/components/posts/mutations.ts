@@ -1,7 +1,12 @@
 import { PostsPage } from "@/lib/types";
-import { useToast } from "../ui/use-toast";
-import { InfiniteData, QueryFilters, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+    InfiniteData,
+    QueryFilters,
+    useMutation,
+    useQueryClient,
+} from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
+import { useToast } from "../ui/use-toast";
 import { deletePost } from "./actions";
 
 export function useDeletePostMutation() {
@@ -9,45 +14,47 @@ export function useDeletePostMutation() {
 
     const queryClient = useQueryClient();
 
-    const rouer = useRouter();
+    const router = useRouter();
     const pathname = usePathname();
 
     const mutation = useMutation({
         mutationFn: deletePost,
-        onSuccess: async (deletePost) => {
-            const queryFilter: QueryFilters = { queryKey: ["post-feed"]}
+        onSuccess: async (deletedPost) => {
+            const queryFilter: QueryFilters = { queryKey: ["post-feed"] };
 
             await queryClient.cancelQueries(queryFilter);
-            
-            queryClient.setQueriesData<InfiniteData<PostsPage, string | null>>(queryFilter,
+
+            queryClient.setQueriesData<InfiniteData<PostsPage, string | null>>(
+                queryFilter,
                 (oldData) => {
-                    if(!oldData) return;
+                    if (!oldData) return;
+
                     return {
                         pageParams: oldData.pageParams,
-                        pages: oldData.pages.map(page => ({
+                        pages: oldData.pages.map((page) => ({
                             nextCursor: page.nextCursor,
-                            posts: page.posts.filter(post => post.id !== deletePost.id)
-                        }))
-                    }
-                }
-            )
+                            posts: page.posts.filter((p) => p.id !== deletedPost.id),
+                        })),
+                    };
+                },
+            );
 
             toast({
-                description: "Post Succeefully Deleted!"
-            })
+                description: "Post deleted",
+            });
 
-            if(pathname === `/posts/${deletePost.id}`) {
-                rouer.push(`/users/${deletePost.user.username}`)
+            if (pathname === `/posts/${deletedPost.id}`) {
+                router.push(`/users/${deletedPost.user.username}`);
             }
         },
         onError(error) {
             console.error(error);
             toast({
                 variant: "destructive",
-                description: "Failed to delete post. Please try again."
-            })
+                description: "Failed to delete post. Please try again.",
+            });
         },
-    })
+    });
 
-    return mutation
+    return mutation;
 }
