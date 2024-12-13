@@ -13,6 +13,8 @@ import FollowerCount from "@/components/FollowerCount"
 import { Button } from "@/components/ui/button"
 import FollowButton from "@/components/FollowButton"
 import UserPosts from "./UserPosts"
+import Linkify from "@/components/Linkify"
+import EditProfileButton from "./EditProfileButton"
 
 interface PageProps {
     params: {
@@ -70,8 +72,8 @@ export default async function page({ params: { username } }: PageProps) {
                     {user.displayName}&apos;s posts
                 </h2>
             </div>
-            <UserPosts userId={user.id} /> 
-        </div> 
+            <UserPosts userId={user.id} />
+        </div>
         <TrendsSidebar />
     </main>
 }
@@ -109,17 +111,19 @@ async function UserProfile({ user, loggedInUserId }: UserProfileProps) {
                     </div>
                 </div>
                 {user.id === loggedInUserId ? (
-                    <Button>Edit Profile</Button>
+                    <EditProfileButton user={user} />
                 ) : (
                     <FollowButton userId={user.id} intialState={followerInfo} />
                 )}
             </div>
-            { user.bio && (
+            {user.bio && (
                 <>
                     <hr />
-                    <div className="overflow-hidden whitespace-pre-line break-words">
-                        {user.bio}
-                    </div>
+                    <Linkify>
+                        <div className="overflow-hidden whitespace-pre-line break-words">
+                            {user.bio}
+                        </div>
+                    </Linkify>
                 </>
             )}
         </div>
