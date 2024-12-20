@@ -132,6 +132,7 @@ model Notification {
   issuer      User    @relation("Issuer", fields: [issuerId], references: [id], onDelete: Cascade)
   postId      String?
   post        Post?   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type        NotificationType
   read        Boolean @default(false)
 
   createdAt DateTime @default(now())

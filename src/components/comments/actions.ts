@@ -13,19 +13,32 @@ export async function submitComment({ post, content }: { post: PostData, content
 
     const { content: contentValidated } = createCommentSchema.parse({ content });
 
-    const newComment = await prisma.comment.create({
-        data: {
-            content: contentValidated,
-            postId: post.id,
-            userId: user.id,
-        },
-        include: getCommentDataInclude(user.id)
-    })
 
-return newComment;
+    const [newComment] = await prisma.$transaction([
+        prisma.comment.create({
+            data: {
+                content: contentValidated,
+                postId: post.id,
+                userId: user.id,
+            },
+            include: getCommentDataInclude(user.id)
+        }),
+        ...(post.user.id !== user.id ?
+            [prisma.notification.create({
+                data: {
+                    issuerId: user.id,
+                    recipientId: post.user.id,
+                    postId: post.id,
+                    type: "COMMENT"
+                }
+            })] :
+            []
+        )
+    ])
+    return newComment;
 }
 
-export async function deleteComment( id: string ) {
+export async function deleteComment(id: string) {
 
     const { user } = await validateRequest();
     if (!user) throw Error("Unauthorizzed");
@@ -34,8 +47,8 @@ export async function deleteComment( id: string ) {
         where: { id }
     })
 
-    if(!comment) throw new Error("Comment Not Found");
-    if (comment.userId !== user.id)  throw Error("Unauthorizzed");
+    if (!comment) throw new Error("Comment Not Found");
+    if (comment.userId !== user.id) throw Error("Unauthorizzed");
 
     const deletedComment = await prisma.comment.delete({
         where: { id },
