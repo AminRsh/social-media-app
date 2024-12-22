@@ -12,18 +12,18 @@ export async function GET() {
 
         const unreadCount = await prisma.notification.count({
             where: {
-                issuerId : user.id,
-                read: false
-            }
-        })
+                recipientId: user.id,
+                read: false,
+            },
+        });
 
         const data: NotificationCountInfo = {
-            unreadCount
-        }
+            unreadCount,
+        };
 
-        return Response.json(data)
+        return Response.json(data);
     } catch (error) {
         console.error(error);
-        return Response.json({ error: "Internal Server Error" }, { status: 500 })
+        return Response.json({ error: "Internal server error" }, { status: 500 });
     }
 }

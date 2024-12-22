@@ -10,18 +10,18 @@ export async function PATCH() {
         }
 
         await prisma.notification.updateMany({
-            where:{
+            where: {
                 recipientId: user.id,
-                read: false
+                read: false,
             },
             data: {
-                read: true
-            }
-        })
+                read: true,
+            },
+        });
 
         return new Response();
     } catch (error) {
         console.error(error);
-        return Response.json({ error: "Internal Server Error" }, { status: 500 })
+        return Response.json({ error: "Internal server error" }, { status: 500 });
     }
 }
