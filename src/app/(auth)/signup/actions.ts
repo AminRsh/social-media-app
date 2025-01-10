@@ -1,17 +1,18 @@
-"use server"
+"use server";
 
 import { lucia } from "@/auth";
 import prisma from "@/lib/prisma";
-import stramServerClient from "@/lib/stream";
-import { signUpSchema, SignupValues } from "@/lib/validation";
+import streamServerClient from "@/lib/stream";
+import { signUpSchema, SignUpValues } from "@/lib/validation";
 import { hash } from "@node-rs/argon2";
 import { generateIdFromEntropySize } from "lucia";
 import { isRedirectError } from "next/dist/client/components/redirect";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-
-export async function signUp(credentials: SignupValues): Promise<{ error: string }> {
+export async function signUp(
+    credentials: SignUpValues,
+): Promise<{ error: string }> {
     try {
         const { username, email, password } = signUpSchema.parse(credentials);
 
@@ -22,47 +23,54 @@ export async function signUp(credentials: SignupValues): Promise<{ error: string
             parallelism: 1,
         });
 
+        const userId = generateIdFromEntropySize(10);
+
         const existingUsername = await prisma.user.findFirst({
             where: {
                 username: {
                     equals: username,
-                    mode: "insensitive"
-                }
-            }
-        })
-        if (existingUsername) error: "Username already taken";
+                    mode: "insensitive",
+                },
+            },
+        });
 
+        if (existingUsername) {
+            return {
+                error: "Username already taken",
+            };
+        }
 
         const existingEmail = await prisma.user.findFirst({
             where: {
                 email: {
                     equals: email,
-                    mode: "insensitive"
-                }
-            }
-        })
-        if (existingEmail) error: "Email already taken";
+                    mode: "insensitive",
+                },
+            },
+        });
 
-        const userId = generateIdFromEntropySize(10);
+        if (existingEmail) {
+            return {
+                error: "Email already taken",
+            };
+        }
 
-        await prisma.$transaction(async(tx) => {
+        await prisma.$transaction(async (tx) => {
             await tx.user.create({
                 data: {
                     id: userId,
                     username,
                     displayName: username,
                     email,
-                    passwordHash
-                }
+                    passwordHash,
+                },
             });
-
-            await stramServerClient.upsertUser({
+            await streamServerClient.upsertUser({
                 id: userId,
                 username,
                 name: username,
             });
-        })
-
+        });
 
         const session = await lucia.createSession(userId, {});
         const sessionCookie = lucia.createSessionCookie(session.id);
@@ -70,15 +78,14 @@ export async function signUp(credentials: SignupValues): Promise<{ error: string
             sessionCookie.name,
             sessionCookie.value,
             sessionCookie.attributes,
-        )
+        );
 
         return redirect("/");
-
     } catch (error) {
         if (isRedirectError(error)) throw error;
         console.error(error);
         return {
-            error: "Something went wrong. Please Try again."
-        }
+            error: "Something went wrong. Please try again.",
+        };
     }
-} 
+}
